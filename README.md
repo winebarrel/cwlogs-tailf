@@ -20,6 +20,14 @@ $ cwlogs-tailf -g my-group -s my-stream
 ...
 ```
 
+```sh
+$ cwlogs-tailf -g my-group
+stream1 2016-05-13T01:51:18+09:00 foo
+stream2 2016-05-13T01:51:18+09:00 bar
+stream1 2016-05-13T01:51:19+09:00 zoo
+...
+```
+
 ## Installation
 
 ```

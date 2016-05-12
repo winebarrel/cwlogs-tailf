@@ -21,9 +21,5 @@ func ParseFlag() (params *CWLogsTailfParams) {
 		log.Fatal("'-g' is required")
 	}
 
-	if params.log_stream_name == "" {
-		log.Fatal("'-s' is required")
-	}
-
 	return
 }
