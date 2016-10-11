@@ -13,10 +13,10 @@ func formatTime(micro_sec int64) string {
 	return time.Unix(0, micro_sec*int64(time.Millisecond)).Format(time.RFC3339)
 }
 
-func getLogEvents(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string, log_stream_name string, verbose bool) (err error) {
+func getLogEvents(svc *cloudwatchlogs.CloudWatchLogs, tailParams *CWLogsTailfParams) (err error) {
 	params := &cloudwatchlogs.GetLogEventsInput{
-		LogGroupName:  aws.String(log_group_name),
-		LogStreamName: aws.String(log_stream_name),
+		LogGroupName:  aws.String(tailParams.log_group_name),
+		LogStreamName: aws.String(tailParams.log_stream_name),
 	}
 
 	var next_token *string
@@ -34,7 +34,7 @@ func getLogEvents(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string, log
 		}
 
 		for _, event := range resp.Events {
-			if verbose {
+			if tailParams.verbose {
 				fmt.Printf("%s\t%s\n", formatTime(*event.Timestamp), *event.Message)
 			} else {
 				fmt.Printf("%s\n", *event.Message)
@@ -109,13 +109,13 @@ func (events NamedLogEvents) Less(i, j int) bool {
 	return *events[i].Event.Timestamp < *events[j].Event.Timestamp
 }
 
-func getLogEventsFromLogGroup(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string, verbose bool) (err error) {
+func getLogEventsFromLogGroup(svc *cloudwatchlogs.CloudWatchLogs, tailParams *CWLogsTailfParams) (err error) {
 	last_timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 
 outer:
 	for {
 		var stream_names []string
-		stream_names, err = geLogStreamNames(svc, log_group_name, last_timestamp)
+		stream_names, err = geLogStreamNames(svc, tailParams.log_group_name, last_timestamp)
 
 		if err != nil {
 			break outer
@@ -125,7 +125,7 @@ outer:
 
 		for _, log_stream_name := range stream_names {
 			params := &cloudwatchlogs.GetLogEventsInput{
-				LogGroupName:  aws.String(log_group_name),
+				LogGroupName:  aws.String(tailParams.log_group_name),
 				LogStreamName: aws.String(log_stream_name),
 				StartTime:     aws.Int64(last_timestamp),
 			}
@@ -148,7 +148,7 @@ outer:
 		sort.Sort(events)
 
 		for _, named_log_event := range events {
-			if verbose {
+			if tailParams.verbose {
 				format_time := formatTime(*named_log_event.Event.Timestamp)
 				fmt.Printf("%s\t%s\t%s\n", named_log_event.StreamName, format_time, *named_log_event.Event.Message)
 			} else {
@@ -167,9 +167,9 @@ func Tailf(params *CWLogsTailfParams) (err error) {
 	svc := cloudwatchlogs.New(session.New())
 
 	if params.log_stream_name != "" {
-		err = getLogEvents(svc, params.log_group_name, params.log_stream_name, params.verbose)
+		err = getLogEvents(svc, params)
 	} else {
-		err = getLogEventsFromLogGroup(svc, params.log_group_name, params.verbose)
+		err = getLogEventsFromLogGroup(svc, params)
 	}
 
 	return
