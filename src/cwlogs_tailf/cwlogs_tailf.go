@@ -71,8 +71,10 @@ func geLogStreamNames(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string,
 		}
 
 		for _, log_stream := range resp.LogStreams {
-			if log_stream.LastIngestionTime == nil || *log_stream.LastIngestionTime < last_timestamp {
+			if log_stream.LastIngestionTime == nil {
 				continue
+			} else if *log_stream.LastIngestionTime < last_timestamp {
+				return
 			}
 
 			stream_names = append(stream_names, *log_stream.LogStreamName)
