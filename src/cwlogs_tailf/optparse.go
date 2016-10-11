@@ -8,6 +8,7 @@ import (
 type CWLogsTailfParams struct {
 	log_group_name  string
 	log_stream_name string
+	verbose         bool
 }
 
 func ParseFlag() (params *CWLogsTailfParams) {
@@ -15,6 +16,7 @@ func ParseFlag() (params *CWLogsTailfParams) {
 
 	flag.StringVar(&params.log_group_name, "g", "", "log group name")
 	flag.StringVar(&params.log_stream_name, "s", "", "log stream name")
+	flag.BoolVar(&params.verbose, "V", false, "verbose output")
 	flag.Parse()
 
 	if params.log_group_name == "" {

@@ -13,7 +13,7 @@ func formatTime(micro_sec int64) string {
 	return time.Unix(0, micro_sec*int64(time.Millisecond)).Format(time.RFC3339)
 }
 
-func getLogEvents(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string, log_stream_name string) (err error) {
+func getLogEvents(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string, log_stream_name string, verbose bool) (err error) {
 	params := &cloudwatchlogs.GetLogEventsInput{
 		LogGroupName:  aws.String(log_group_name),
 		LogStreamName: aws.String(log_stream_name),
@@ -34,7 +34,11 @@ func getLogEvents(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string, log
 		}
 
 		for _, event := range resp.Events {
-			fmt.Printf("%s\t%s\n", formatTime(*event.Timestamp), *event.Message)
+			if verbose {
+				fmt.Printf("%s\t%s\n", formatTime(*event.Timestamp), *event.Message)
+			} else {
+				fmt.Printf("%s\n", *event.Message)
+			}
 		}
 
 		next_token = resp.NextForwardToken
@@ -103,7 +107,7 @@ func (events NamedLogEvents) Less(i, j int) bool {
 	return *events[i].Event.Timestamp < *events[j].Event.Timestamp
 }
 
-func getLogEventsFromLogGroup(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string) (err error) {
+func getLogEventsFromLogGroup(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string, verbose bool) (err error) {
 	last_timestamp := time.Now().UnixNano() / int64(time.Millisecond)
 
 outer:
@@ -142,8 +146,12 @@ outer:
 		sort.Sort(events)
 
 		for _, named_log_event := range events {
-			format_time := formatTime(*named_log_event.Event.Timestamp)
-			fmt.Printf("%s\t%s\t%s\n", named_log_event.StreamName, format_time, *named_log_event.Event.Message)
+			if verbose {
+				format_time := formatTime(*named_log_event.Event.Timestamp)
+				fmt.Printf("%s\t%s\t%s\n", named_log_event.StreamName, format_time, *named_log_event.Event.Message)
+			} else {
+				fmt.Printf("%s\n", *named_log_event.Event.Message)
+			}
 			last_timestamp = *named_log_event.Event.Timestamp
 		}
 
@@ -157,9 +165,9 @@ func Tailf(params *CWLogsTailfParams) (err error) {
 	svc := cloudwatchlogs.New(session.New())
 
 	if params.log_stream_name != "" {
-		err = getLogEvents(svc, params.log_group_name, params.log_stream_name)
+		err = getLogEvents(svc, params.log_group_name, params.log_stream_name, params.verbose)
 	} else {
-		err = getLogEventsFromLogGroup(svc, params.log_group_name)
+		err = getLogEventsFromLogGroup(svc, params.log_group_name, params.verbose)
 	}
 
 	return
