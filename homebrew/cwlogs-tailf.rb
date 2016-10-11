@@ -1,11 +1,11 @@
 require 'formula'
 
 class CwlogsTailf < Formula
-  VERSION = '0.1.1'
+  VERSION = '0.1.2'
 
   homepage 'https://github.com/winebarrel/cwlogs-tailf'
   url "https://github.com/winebarrel/cwlogs-tailf/releases/download/v#{VERSION}/cwlogs-tailf-v#{VERSION}-darwin-amd64.gz"
-  sha256 'cd2df78efb83f3267ffc980d182bf64f8a1d1c148bdec117a4a8b79fd369ba4b'
+  sha256 'b0a175ebf6ad93ba70280116249f39176a26af39a7c709b43d34cd45133c723a'
   version VERSION
   head 'https://github.com/winebarrel/cwlogs-tailf.git', :branch => 'master'
 
