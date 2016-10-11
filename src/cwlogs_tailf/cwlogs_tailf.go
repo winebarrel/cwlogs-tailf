@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
+	"regexp"
 	"sort"
 	"time"
 )
@@ -49,7 +50,7 @@ func getLogEvents(svc *cloudwatchlogs.CloudWatchLogs, tailParams *CWLogsTailfPar
 	return
 }
 
-func geLogStreamNames(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string, last_timestamp int64) (stream_names []string, err error) {
+func geLogStreamNames(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string, filter *regexp.Regexp, last_timestamp int64) (stream_names []string, err error) {
 	params := &cloudwatchlogs.DescribeLogStreamsInput{
 		LogGroupName: aws.String(log_group_name),
 		Descending:   aws.Bool(true),
@@ -73,8 +74,14 @@ func geLogStreamNames(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string,
 		for _, log_stream := range resp.LogStreams {
 			if log_stream.LastIngestionTime == nil {
 				continue
-			} else if *log_stream.LastIngestionTime < last_timestamp {
+			}
+
+			if *log_stream.LastIngestionTime < last_timestamp {
 				return
+			}
+
+			if filter != nil && !filter.MatchString(*log_stream.LogStreamName) {
+				continue
 			}
 
 			stream_names = append(stream_names, *log_stream.LogStreamName)
@@ -115,7 +122,7 @@ func getLogEventsFromLogGroup(svc *cloudwatchlogs.CloudWatchLogs, tailParams *CW
 outer:
 	for {
 		var stream_names []string
-		stream_names, err = geLogStreamNames(svc, tailParams.log_group_name, last_timestamp)
+		stream_names, err = geLogStreamNames(svc, tailParams.log_group_name, tailParams.filter, last_timestamp)
 
 		if err != nil {
 			break outer
