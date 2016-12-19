@@ -3,12 +3,41 @@ package cwlogs_tailf
 import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
+	"github.com/cenkalti/backoff"
 	"regexp"
 	"sort"
 	"time"
 )
+
+func backoffRateExceeded(operation func() error) (err error) {
+	ticker := backoff.NewTicker(backoff.NewExponentialBackOff())
+
+	for _ = range ticker.C {
+		err = operation()
+
+		if err == nil {
+			ticker.Stop()
+			break
+		}
+
+		awsErr, ok := err.(awserr.Error)
+
+		if !ok {
+			ticker.Stop()
+			break
+		}
+
+		if awsErr.Code() != "ThrottlingException" {
+			ticker.Stop()
+			break
+		}
+	}
+
+	return err
+}
 
 func formatTime(micro_sec int64) string {
 	return time.Unix(0, micro_sec*int64(time.Millisecond)).Format(time.RFC3339)
@@ -28,7 +57,11 @@ func getLogEvents(svc *cloudwatchlogs.CloudWatchLogs, tailParams *CWLogsTailfPar
 		}
 
 		var resp *cloudwatchlogs.GetLogEventsOutput
-		resp, err = svc.GetLogEvents(params)
+
+		err = backoffRateExceeded(func() error {
+			resp, err = svc.GetLogEvents(params)
+			return err
+		})
 
 		if err != nil {
 			break
@@ -65,7 +98,11 @@ func geLogStreamNames(svc *cloudwatchlogs.CloudWatchLogs, log_group_name string,
 		}
 
 		var resp *cloudwatchlogs.DescribeLogStreamsOutput
-		resp, err = svc.DescribeLogStreams(params)
+
+		err = backoffRateExceeded(func() error {
+			resp, err = svc.DescribeLogStreams(params)
+			return err
+		})
 
 		if err != nil {
 			return
@@ -138,7 +175,11 @@ outer:
 			}
 
 			var resp *cloudwatchlogs.GetLogEventsOutput
-			resp, err = svc.GetLogEvents(params)
+
+			err = backoffRateExceeded(func() error {
+				resp, err = svc.GetLogEvents(params)
+				return err
+			})
 
 			if err != nil {
 				break outer

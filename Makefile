@@ -13,6 +13,7 @@ all: cwlogs-tailf
 
 go-get:
 	go get github.com/aws/aws-sdk-go
+	go get github.com/cenkalti/backoff
 
 cwlogs-tailf: go-get main.go src/cwlogs_tailf/optparse.go src/cwlogs_tailf/cwlogs_tailf.go
 	GOPATH=$(RUNTIME_GOPATH) go build -o cwlogs-tailf main.go
