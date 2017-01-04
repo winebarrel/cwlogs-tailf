@@ -5,7 +5,7 @@ class CwlogsTailf < Formula
 
   homepage 'https://github.com/winebarrel/cwlogs-tailf'
   url "https://github.com/winebarrel/cwlogs-tailf/releases/download/v#{VERSION}/cwlogs-tailf-v#{VERSION}-darwin-amd64.gz"
-  sha256 '535c4e3d9accd74e5cc0994c4fd827330f42412d19cd090bd184e46d02aa8399'
+  sha256 'fad4f5d03869f59c88aa1567336dc24fd6acc80601a9f5956f5a329bdd45e3e9'
   version VERSION
   head 'https://github.com/winebarrel/cwlogs-tailf.git', :branch => 'master'
 
