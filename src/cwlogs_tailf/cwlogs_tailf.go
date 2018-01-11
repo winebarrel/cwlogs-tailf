@@ -54,6 +54,9 @@ func getLogEvents(svc *cloudwatchlogs.CloudWatchLogs, tailParams *CWLogsTailfPar
 	for {
 		if next_token != nil {
 			params.NextToken = next_token
+		} else if tailParams.start_time > 0 {
+			params.StartTime = aws.Int64(tailParams.start_time)
+			params.StartFromHead = aws.Bool(true)
 		}
 
 		var resp *cloudwatchlogs.GetLogEventsOutput
@@ -154,7 +157,13 @@ func (events NamedLogEvents) Less(i, j int) bool {
 }
 
 func getLogEventsFromLogGroup(svc *cloudwatchlogs.CloudWatchLogs, tailParams *CWLogsTailfParams) (err error) {
-	last_timestamp := time.Now().UnixNano() / int64(time.Millisecond)
+	var last_timestamp int64
+
+	if tailParams.start_time > 0 {
+		last_timestamp = tailParams.start_time
+	} else {
+		last_timestamp = time.Now().UnixNano() / int64(time.Millisecond)
+	}
 
 outer:
 	for {
@@ -172,6 +181,7 @@ outer:
 				LogGroupName:  aws.String(tailParams.log_group_name),
 				LogStreamName: aws.String(log_stream_name),
 				StartTime:     aws.Int64(last_timestamp),
+				StartFromHead: aws.Bool(true),
 			}
 
 			var resp *cloudwatchlogs.GetLogEventsOutput

@@ -19,6 +19,7 @@ endif
 go-get:
 	go get github.com/aws/aws-sdk-go
 	go get github.com/cenkalti/backoff
+	go get github.com/tkuchiki/parsetime
 
 package: clean cwlogs-tailf
 	gzip -c cwlogs-tailf > pkg/cwlogs-tailf-$(VERSION)-$(GOOS)-$(GOARCH).gz

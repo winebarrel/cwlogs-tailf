@@ -13,6 +13,8 @@ Usage of cwlogs-tailf:
       log stream name filter regexp
   -s string
       log stream name
+  -t string
+      start time
 ```
 
 ```sh
